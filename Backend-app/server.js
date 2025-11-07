@@ -17,23 +17,40 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // --- START CORS FIX: Dynamic Port Range for Local Development ---
-// Dynamically generate a list of common development ports for flexibility.
-const START_PORT = 5173;
-const END_PORT = 5192; // Supports 20 simultaneous frontend terminals (5173 through 5192)
 
-const DEVELOPMENT_PORTS = [];
-for (let port = START_PORT; port <= END_PORT; port++) {
-    DEVELOPMENT_PORTS.push(port.toString());
+// Get the deployed frontend URL from the environment (e.g., from Render settings)
+const DEPLOYED_CLIENT_URL = process.env.CLIENT_URL; 
+const NETLIFY_URL = 'https://statuesque-crostata-70542a.netlify.app'; // YOUR LIVE NETLIFY APP
+
+// List of allowed origins for production and development
+let allowedOrigins = [];
+
+if (process.env.NODE_ENV === 'production') {
+    // In production, only allow the deployed Netlify URL and the CLIENT_URL variable
+    allowedOrigins = [
+        NETLIFY_URL, 
+        DEPLOYED_CLIENT_URL
+    ].filter(Boolean);
+    
+} else {
+    // --- DEVELOPMENT LOGIC (as you had it) ---
+    const START_PORT = 5173;
+    const END_PORT = 5192; 
+
+    const DEVELOPMENT_PORTS = [];
+    for (let port = START_PORT; port <= END_PORT; port++) {
+        DEVELOPMENT_PORTS.push(port.toString());
+    }
+
+    const devOrigins = DEVELOPMENT_PORTS.map(port => `http://localhost:${port}`);
+
+    // In development, allow the deployed URL, localhost ports, and NETLIFY_URL
+    allowedOrigins = [
+        NETLIFY_URL,
+        ...devOrigins,
+        DEPLOYED_CLIENT_URL
+    ].filter(Boolean); 
 }
-
-// Construct the list of allowed development origins
-const devOrigins = DEVELOPMENT_PORTS.map(port => `http://localhost:${port}`);
-
-// List of all allowed origins
-const allowedOrigins = [
-    process.env.CLIENT_URL, // From your .env file
-    ...devOrigins
-].filter(Boolean); // Filter out any falsy values (like undefined if CLIENT_URL is missing)
 
 const uniqueAllowedOrigins = Array.from(new Set(allowedOrigins));
 
@@ -50,7 +67,7 @@ const corsOptions = {
             callback(null, true);
         } else {
             console.warn(`[CORS DENIED] Access DENIED for requested origin: ${origin}. Allowed list size: ${uniqueAllowedOrigins.length}`);
-            callback(null, false);
+            callback(new Error('Not allowed by CORS'), false); // Changed to throw an Error
         }
     },
     credentials: true,

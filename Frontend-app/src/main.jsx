@@ -37,27 +37,27 @@ children: [
 { path: 'products/:id', element: <ProductDetail /> },
 { path: 'login', element: <Login /> },
 { path: 'register', element: <Register /> },
-      
-      // --- Protected Routes ---
-      { path: 'cart', element: <ProtectedRoute><Cart /></ProtectedRoute> },
-      { path: 'checkout', element: <ProtectedRoute><Checkout /></ProtectedRoute> },
-      { path: 'profile', element: <ProtectedRoute><Profile /></ProtectedRoute> },
-      { path: 'orders', element: <ProtectedRoute><Orders /></ProtectedRoute> },
-      { path: 'orders/:id', element: <ProtectedRoute><OrderDetail /></ProtectedRoute> },
+
+// --- Protected Routes ---
+{ path: 'cart', element: <ProtectedRoute><Cart /></ProtectedRoute> },
+{ path: 'checkout', element: <ProtectedRoute><Checkout /></ProtectedRoute> },
+{ path: 'profile', element: <ProtectedRoute><Profile /></ProtectedRoute> },
+{ path: 'orders', element: <ProtectedRoute><Orders /></ProtectedRoute> },
+{ path: 'orders/:id', element: <ProtectedRoute><OrderDetail /></ProtectedRoute> },
 
 // --- Admin Routes ---
-      { path: 'admin', element: <AdminRoute><AdminDashboard /></AdminRoute> },
-      { path: 'admin/products', element: <AdminRoute><ProductManagement /></AdminRoute> },
-      { path: 'admin/orders', element: <AdminRoute><OrderManagement /></AdminRoute> },
-      { path: 'admin/users', element: <AdminRoute><UserManagement /></AdminRoute> },
-    ],
-  },
+{ path: 'admin', element: <AdminRoute><AdminDashboard /></AdminRoute> },
+{ path: 'admin/products', element: <AdminRoute><ProductManagement /></AdminRoute> },
+{ path: 'admin/orders', element: <AdminRoute><OrderManagement /></AdminRoute> },
+{ path: 'admin/users', element: <AdminRoute><UserManagement /></AdminRoute> },
+],
+},
 ], {
-  // ✅ FIX: Enable v7 future flags to resolve the console warnings
-  future: {
-    v7_startTransition: true,
-    v7_relativeSplatPath: true,
-  },
+ // ✅ FIX: Enable v7 future flags to resolve the console warnings
+ future: {
+ v7_startTransition: true,
+ v7_relativeSplatPath: true,
+ },
 });
 
 ReactDOM.createRoot(document.getElementById('root')).render(

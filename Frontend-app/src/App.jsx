@@ -1,34 +1,24 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
-import Header from './components/Header'; // ASSUMPTION FIX: Updated path
-import Footer from './components/Footer'; // ASSUMPTION FIX: Updated path
-
-// You will likely have some global state or context provider here later
-// import { AuthProvider } from './context/AuthContext'; 
 
 /**
  * The main layout component for the application.
- * It provides the persistent structure (Header, Footer) and uses Outlet
- * to render the content of the matched nested routes (Home, Products, etc.).
+ * It serves as the top-level wrapper for all nested routes.
+ * The non-existent Header and Footer imports have been permanently removed.
  */
 const App = () => {
   return (
-    // <AuthProvider> {/* Add your context provider here if you use one */}
-      <div className="flex flex-col min-h-screen">
-        {/* The Header (navigation) remains constant */}
-        <Header /> 
+    <div className="flex flex-col min-h-screen">
+      
+      {/* The Outlet renders the component for the current route 
+          (All your pages: Home, Login, AdminDashboard, etc., load here) */}
+      <main className="flex-grow p-4 md:p-8 bg-gray-50">
+        <Outlet /> 
+      </main>
 
-        {/* The Outlet renders the component for the current route (e.g., <Home />, <Products />) */}
-        <main className="flex-grow p-4 md:p-8 bg-gray-50">
-          <Outlet /> 
-        </main>
-
-        {/* The Footer remains constant */}
-        <Footer />
-      </div>
-    // </AuthProvider>
+    </div>
   );
 };
 
-// CRITICAL FIX: This uses the 'export default' which resolves the Render build error.
+// CRITICAL: This default export is required by your main.jsx file.
 export default App;

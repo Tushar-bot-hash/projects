@@ -12,11 +12,39 @@ connectDB();
 // Initialize Express app
 const app = express();
 
+// --- CORS Configuration Update ---
+
+// Define allowed origins to cover common local development ports
+const allowedOrigins = [
+    // 1. Production/Explicitly set URL (from .env)
+    process.env.CLIENT_URL, 
+    // 2. Common React/Vite dev ports (5173 is default, 5174 is current fallback)
+    'http://localhost:5173',
+    'http://localhost:5174', // <-- Added new port 5174
+    'http://localhost:5175', // <-- Added common fallback port 5175
+    'http://localhost:3000',
+    // 3. Alternative loopback addresses often used by development servers
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:5174', // <-- Added new port 5174
+    'http://127.0.0.1:5175', // <-- Added common fallback port 5175
+    'http://127.0.0.1:3000',
+].filter(Boolean); // Filter out any empty/undefined entries
+
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, curl, or same-origin)
+    if (!origin) return callback(null, true); 
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      // Log the blocked origin for debugging
+      console.log(`CORS Policy blocked origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 

@@ -1,6 +1,14 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// ✅ FIXED: Changed VITE_API_URL to VITE_BACKEND_URL to match Vercel env variable
+const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000/api';
+
+// Optional: Add console log to verify the URL (remove after testing)
+console.log('🔧 API Configuration:', {
+  envVariable: import.meta.env.VITE_BACKEND_URL,
+  finalURL: API_URL,
+  mode: import.meta.env.MODE
+});
 
 // Create axios instance
 const api = axios.create({
@@ -8,6 +16,8 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // Add withCredentials if you're using cookies
+  withCredentials: true,
 });
 
 // Add token to requests
@@ -28,6 +38,14 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Enhanced error logging
+    console.error('API Error:', {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+      url: error.config?.url
+    });
+
     if (error.response?.status === 401) {
       // Token expired or invalid
       localStorage.removeItem('token');

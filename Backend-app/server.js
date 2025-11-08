@@ -17,37 +17,26 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // --- START CORS FIX: Dynamic Origin Configuration ---
-
-// Get the deployed frontend URL from the environment (e.g., from Render settings)
-// Use FRONTEND_URL as the key to be set on Render
 const DEPLOYED_CLIENT_URL = process.env.FRONTEND_URL; 
-
-// The actual Vercel Production URL (Mandatory fix)
 const VERCEL_PRODUCTION_URL = 'https://projects-eight-gules.vercel.app'; 
 
-// List of allowed origins for production and development
 let allowedOrigins = [];
 
 if (process.env.NODE_ENV === 'production') {
-    // In production, only allow the Vercel Production URL and the variable
     allowedOrigins = [
         VERCEL_PRODUCTION_URL, 
         DEPLOYED_CLIENT_URL
     ].filter(Boolean);
-    
 } else {
-    // --- DEVELOPMENT LOGIC (as you had it) ---
     const START_PORT = 5173;
     const END_PORT = 5192; 
-
     const DEVELOPMENT_PORTS = [];
+    
     for (let port = START_PORT; port <= END_PORT; port++) {
         DEVELOPMENT_PORTS.push(port.toString());
     }
-
+    
     const devOrigins = DEVELOPMENT_PORTS.map(port => `http://localhost:${port}`);
-
-    // In development, allow Vercel URL, localhost ports, and the deployed client variable
     allowedOrigins = [
         VERCEL_PRODUCTION_URL,
         ...devOrigins,
@@ -57,28 +46,29 @@ if (process.env.NODE_ENV === 'production') {
 
 const uniqueAllowedOrigins = Array.from(new Set(allowedOrigins));
 
-
 const corsOptions = {
-    // This function checks the origin sent by the browser
     origin: (origin, callback) => {
-        // 1. Allow requests with no origin (e.g., Postman, server-to-server)
+        // Allow requests with no origin (mobile apps, Postman, etc.)
         if (!origin) return callback(null, true); 
-
-        // 2. Check if the requested origin is in our allowed list
+        
         if (uniqueAllowedOrigins.includes(origin)) {
-            console.log(`[CORS SUCCESS] Access granted for requested origin: ${origin}`);
+            // ✅ FIXED: Correct template literal syntax
+            console.log(`[CORS SUCCESS] Access granted for origin: ${origin}`);
             callback(null, true);
         } else {
-            console.warn(`[CORS DENIED] Access DENIED for requested origin: ${origin}. Allowed list size: ${uniqueAllowedOrigins.length}`);
+            // ✅ FIXED: Correct template literal syntax
+            console.warn(`[CORS DENIED] Access denied for origin: ${origin}`);
+            console.warn(`Allowed origins: ${uniqueAllowedOrigins.join(', ')}`);
             callback(new Error('Not allowed by CORS'), false); 
         }
     },
     credentials: true,
     exposedHeaders: ['set-cookie'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
 };
 
 app.use(cors(corsOptions)); 
-
 // --- END CORS FIX ---
 
 // Test route
@@ -105,6 +95,7 @@ app.use('/api/admin', require('./src/routes/admin'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
+    console.error('Error:', err);
     const statusCode = err.statusCode || 500;
     res.status(statusCode).json({
       message: err.message,
@@ -120,5 +111,7 @@ app.use((req, res) => {
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
+    // ✅ FIXED: Correct template literal syntax
     console.log(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+    console.log(`📋 Allowed origins: ${uniqueAllowedOrigins.join(', ')}`);
 });

@@ -5,89 +5,89 @@
 @tailwind utilities;
 
 @layer base {
-  body {
+body {
 @apply bg-gray-50 text-gray-900;
 background-image: 
-      radial-gradient(circle at 20% 50%, rgba(225, 29, 72, 0.03) 0%, transparent 50%),
-      radial-gradient(circle at 80% 80%, rgba(147, 51, 234, 0.03) 0%, transparent 50%),
-      radial-gradient(circle at 40% 20%, rgba(59, 130, 246, 0.03) 0%, transparent 50%);
+radial-gradient(circle at 20% 50%, rgba(225, 29, 72, 0.03) 0%, transparent 50%),
+radial-gradient(circle at 80% 80%, rgba(147, 51, 234, 0.03) 0%, transparent 50%),
+radial-gradient(circle at 40% 20%, rgba(59, 130, 246, 0.03) 0%, transparent 50%);
 background-attachment: fixed;
 }
 }
 
 @layer components {
-  /* Button Styles */
-  .btn {
+/* Button Styles */
+.btn {
 @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
-  .btn-primary {
+.btn-primary {
 @apply bg-primary-600 text-white hover:bg-primary-700 active:scale-95;
 }
 
-  .btn-secondary {
+.btn-secondary {
 @apply bg-gray-200 text-gray-800 hover:bg-gray-300 active:scale-95;
 }
 
-  .btn-outline {
+.btn-outline {
 @apply border-2 border-primary-600 text-primary-600 hover:bg-primary-50 active:scale-95;
 }
 
-  /* Input Styles */
-  .input {
+/* Input Styles */
+.input {
 @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all;
 }
 
-  /* Card Styles */
-  .card {
- @apply bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow;
+/* Card Styles */
+.card {
+@apply bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow;
 }
 
-  /* Container */
+/* Container */
 .container-custom {
 @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
 }
 
-  /* Product Card */
-  .product-card {
+/* Product Card */
+.product-card {
 @apply bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer group;
 }
 
-  .product-card-image {
+.product-card-image {
 @apply w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500;
 }
 
-  /* Badge */
-  .badge {
+/* Badge */
+.badge {
 @apply inline-block px-3 py-1 text-xs font-semibold rounded-full;
 }
 
-  .badge-success {
+.badge-success {
 @apply bg-green-100 text-green-800;
 }
 
-  .badge-warning {
+.badge-warning {
  @apply bg-yellow-100 text-yellow-800;
 }
 
-  .badge-danger {
+.badge-danger {
  @apply bg-red-100 text-red-800;
 }
 
-  .badge-info {
+.badge-info {
  @apply bg-blue-100 text-blue-800;
 }
 
-  /* Loading Spinner */
-  .spinner {
+/* Loading Spinner */
+.spinner {
  @apply inline-block w-6 h-6 border-4 border-gray-200 border-t-primary-600 rounded-full animate-spin;
 }
 
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
- width: 8px;
- height: 8px;
+width: 8px;
+height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -105,11 +105,11 @@ background: #555;
 
 /* Animations */
 @keyframes shimmer {
-  0% {
- background-position: -1000px 0;
+0% {
+background-position: -1000px 0;
 }
-  100% {
- background-position: 1000px 0;
+100% {
+background-position: 1000px 0;
 }
 }
 
@@ -123,10 +123,10 @@ background-size: 1000px 100%;
 .bg-anime-pattern {
 background-color: #fef2f2;
 background-image: 
-    linear-gradient(135deg, #fef2f2 25%, transparent 25%),
-    linear-gradient(225deg, #fef2f2 25%, transparent 25%),
-    linear-gradient(45deg, #fef2f2 25%, transparent 25%),
-    linear-gradient(315deg, #fef2f2 25%, #fff5f5 25%);
+linear-gradient(135deg, #fef2f2 25%, transparent 25%),
+linear-gradient(225deg, #fef2f2 25%, transparent 25%),
+linear-gradient(45deg, #fef2f2 25%, transparent 25%),
+linear-gradient(315deg, #fef2f2 25%, #fff5f5 25%);
 background-position: 20px 0, 20px 0, 0 0, 0 0;
 background-size: 40px 40px;
 background-repeat: repeat;
@@ -166,6 +166,7 @@ background-position: bottom;
 
 /* FIX: Prevent Mobile Horizontal Scrolling */
 html, body {
-    min-width: 100vw; 
-    overflow-x: hidden; 
+min-width: 100vw; 
+overflow-x: hidden; }
+
 }

@@ -6,6 +6,12 @@ const connectDB = require('./src/config/db');
 // Load environment variables
 dotenv.config();
 
+// JWT SECRET CHECK (Best Practice for Authorization)
+if (!process.env.JWT_SECRET) {
+    console.error("FATAL ERROR: JWT_SECRET is not defined. JWT signing will fail.");
+    // In a production app, you might crash the process here: process.exit(1);
+}
+
 // Connect to MongoDB
 connectDB();
 
@@ -16,53 +22,23 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// --- START CORS FIX: Dynamic Origin Configuration ---
-const DEPLOYED_CLIENT_URL = process.env.FRONTEND_URL; 
-const VERCEL_PRODUCTION_URL = 'https://projects-eight-gules.vercel.app'; 
-
-let allowedOrigins = [];
-
-if (process.env.NODE_ENV === 'production') {
-    allowedOrigins = [
-        VERCEL_PRODUCTION_URL, 
-        DEPLOYED_CLIENT_URL
-    ].filter(Boolean);
-} else {
-    const START_PORT = 5173;
-    const END_PORT = 5192; 
-    const DEVELOPMENT_PORTS = [];
-    
-    for (let port = START_PORT; port <= END_PORT; port++) {
-        DEVELOPMENT_PORTS.push(port.toString());
-    }
-    
-    const devOrigins = DEVELOPMENT_PORTS.map(port => `http://localhost:${port}`);
-    allowedOrigins = [
-        VERCEL_PRODUCTION_URL,
-        ...devOrigins,
-        DEPLOYED_CLIENT_URL
-    ].filter(Boolean); 
-}
-
-const uniqueAllowedOrigins = Array.from(new Set(allowedOrigins));
-
+// --- START CORS FIX: Allow All Origins ---
+// NOTE: Using credentials: true with a dynamic origin function is required
+// because the W3C specification forbids origin: '*' when credentials (cookies)
+// are being used. This function dynamically reflects the requesting origin.
 const corsOptions = {
     origin: (origin, callback) => {
-        // Allow requests with no origin (mobile apps, Postman, etc.)
-        if (!origin) return callback(null, true); 
-        
-        if (uniqueAllowedOrigins.includes(origin)) {
-            // ✅ FIXED: Correct template literal syntax
-            console.log(`[CORS SUCCESS] Access granted for origin: ${origin}`);
-            callback(null, true);
-        } else {
-            // ✅ FIXED: Correct template literal syntax
-            console.warn(`[CORS DENIED] Access denied for origin: ${origin}`);
-            console.warn(`Allowed origins: ${uniqueAllowedOrigins.join(', ')}`);
-            callback(new Error('Not allowed by CORS'), false); 
+        // Allow requests with no origin (like Postman or server-to-server)
+        if (!origin) {
+            console.log('[CORS SUCCESS] Access granted for no origin (Internal/Postman).');
+            return callback(null, true);
         }
+
+        // Allow ALL other origins.
+        console.log(`[CORS SUCCESS] Access granted for origin: ${origin}`);
+        callback(null, true);
     },
-    credentials: true,
+    credentials: true, // Necessary for passing cookies/JWTs
     exposedHeaders: ['set-cookie'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -111,7 +87,6 @@ app.use((req, res) => {
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-    // ✅ FIXED: Correct template literal syntax
     console.log(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
-    console.log(`📋 Allowed origins: ${uniqueAllowedOrigins.join(', ')}`);
+    console.log(`⚠️ CORS is configured to allow ALL origins.`);
 });

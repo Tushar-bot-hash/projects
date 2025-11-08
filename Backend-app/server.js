@@ -26,25 +26,8 @@ app.use(express.urlencoded({ extended: true }));
 // NOTE: Using credentials: true with a dynamic origin function is required
 // because the W3C specification forbids origin: '*' when credentials (cookies)
 // are being used. This function dynamically reflects the requesting origin.
-const corsOptions = {
-    origin: (origin, callback) => {
-        // Allow requests with no origin (like Postman or server-to-server)
-        if (!origin) {
-            console.log('[CORS SUCCESS] Access granted for no origin (Internal/Postman).');
-            return callback(null, true);
-        }
 
-        // Allow ALL other origins.
-        console.log(`[CORS SUCCESS] Access granted for origin: ${origin}`);
-        callback(null, true);
-    },
-    credentials: true, // Necessary for passing cookies/JWTs
-    exposedHeaders: ['set-cookie'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-};
-
-app.use(cors(corsOptions)); 
+app.use(cors({ origin: '*', credentials: true })); 
 // --- END CORS FIX ---
 
 // Test route

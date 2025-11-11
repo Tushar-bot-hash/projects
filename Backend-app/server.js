@@ -18,57 +18,29 @@ connectDB();
 // Initialize Express app
 const app = express();
 
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
 // =========================================================================
-// 🚀 FIXED CORS CONFIGURATION
+// 🚀 SIMPLE & EFFECTIVE CORS CONFIGURATION
 // =========================================================================
 
 const allowedOrigins = [
-    // ✅ YOUR ACTUAL VERCEL DOMAIN (from the error logs)
     'https://projects-l2cf7s8oi-tusharv811-2882s-projects.vercel.app',
-    
-    // ✅ MAIN VERCEL DOMAIN (if different)
     'https://projects-eight-gules.vercel.app', 
-    
-    // ✅ WILDCARD FOR ALL VERCEl SUBDOMAINS (proper format)
-    /https:\/\/.*\.vercel\.app$/,
-    
-    // ✅ Your Render Backend Domain
     'https://anime-api-backend-u42d.onrender.com', 
-
-    // ✅ Local development
     'http://localhost:3000',
     'http://localhost:5173',
     'http://localhost:5000'
 ]; 
 
+// Apply CORS middleware with simple configuration
 app.use(cors({
-    origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps, Postman, server-side requests)
-        if (!origin) {
-            console.log('✅ Allowed: No origin (server-side request)');
-            callback(null, true);
-            return;
-        }
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps, Postman)
+        if (!origin) return callback(null, true);
         
-        // Check if origin is in allowed list
-        const isAllowed = allowedOrigins.some(allowedOrigin => {
-            if (allowedOrigin instanceof RegExp) {
-                return allowedOrigin.test(origin);
-            }
-            return origin === allowedOrigin;
-        });
-
-        if (isAllowed) {
-            console.log(`✅ Allowed CORS request from: ${origin}`);
+        if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
-            console.warn(`❌ CORS blocked: Request from unauthorized origin: ${origin}`);
-            console.log(`ℹ️  Allowed origins:`, allowedOrigins);
-            callback(new Error(`Not allowed by CORS: ${origin}`));
+            callback(new Error('Not allowed by CORS'));
         }
     },
     credentials: true,
@@ -77,9 +49,28 @@ app.use(cors({
 }));
 
 // =========================================================================
-// 🛠️ EXPLICIT OPTIONS HANDLER FOR PREFLIGHT REQUESTS
+// 🛠️ MANUAL PREFLIGHT HANDLER (NO WILDCARD ROUTES)
 // =========================================================================
-app.options('*', cors()); // Enable preflight for all routes
+
+// Instead of app.options('*'), we'll handle preflight manually for specific routes
+// OR use this approach - manually set headers for OPTIONS requests
+
+// Global preflight handler - using a different approach
+app.use((req, res, next) => {
+    // Handle OPTIONS method (preflight requests)
+    if (req.method === 'OPTIONS') {
+        res.header('Access-Control-Allow-Origin', req.headers.origin);
+        res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+        res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+        res.header('Access-Control-Allow-Credentials', 'true');
+        return res.status(200).send();
+    }
+    next();
+});
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Test route with CORS info
 app.get('/', (req, res) => {

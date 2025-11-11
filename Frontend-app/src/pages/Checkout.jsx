@@ -20,7 +20,7 @@ export default function Checkout() {
 
   const calculateSubtotal = () => {
     return cartItems.reduce((total, item) => {
-      // Use the safe logic for price calculation
+      // Use the safe logic for price calculation, ensuring item.price is preferred
       const price = item.price || item.product?.price || 0;
       return total + (price * item.quantity);
     }, 0);
@@ -50,16 +50,30 @@ export default function Checkout() {
         return;
       }
 
-      // 🚨 FIX APPLIED HERE: Including price and name in the payload 🚨
+      // 🚨 UPDATED FIX: More robust mapping with local variable checks 🚨
       const checkoutPayload = {
-        cartItems: cartItems.map(item => ({
-          productId: item.product?._id || item.productId,
-          quantity: item.quantity,
-          // CRITICAL: Send the unit price so the backend can calculate line_items
-          price: item.price || item.product?.price || 0,
-          // Optional but recommended: Send the name for Stripe's product data
-          name: item.name || item.product?.name || 'Unknown Item',
-        })),
+        cartItems: cartItems.map(item => {
+          // 1. Determine Product Price Safely
+          // Prioritize item.price (from cart model) then item.product?.price (populated product model)
+          const productPrice = item.price || item.product?.price || 0;
+          
+          // 2. Determine other required fields safely
+          const productName = item.name || item.product?.name || 'Unknown Item';
+          const productQuantity = item.quantity || 0;
+
+          // Optional: Add a client-side check to help debug
+          if (productPrice <= 0 || productQuantity <= 0) {
+            console.error('Frontend detected invalid item:', { name: productName, price: productPrice, quantity: productQuantity });
+            // You can optionally throw an error here to stop execution before hitting the backend
+          }
+
+          return {
+            productId: item.product?._id || item.productId,
+            quantity: productQuantity,
+            price: productPrice, // CRITICAL: Send the determined unit price
+            name: productName,   // Recommended for backend use (Stripe)
+          };
+        }),
         totalAmount: calculateTotal(),
       };
 
@@ -81,7 +95,6 @@ export default function Checkout() {
       if (response.ok && data.url) {
         window.location.href = data.url;
       } else {
-        // Data.message will now contain the specific error from Stripe (if any)
         toast.error(data.message || 'Payment session creation failed'); 
       }
     } catch (err) {

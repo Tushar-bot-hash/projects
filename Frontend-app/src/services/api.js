@@ -19,8 +19,8 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  // Add withCredentials if you're using cookies
-  withCredentials: true,
+  // ⚠️ REMOVE THIS LINE TEMPORARILY to fix CORS issues
+  // withCredentials: true,
 });
 
 // Add token to requests

@@ -23,60 +23,73 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // =========================================================================
-// 🚀 CORS FIX: Updated with wildcard Vercel domains
-// This resolves the "credentials with wildcard" error by allowing your 
-// specific Vercel domain to communicate with your Render backend.
+// 🚀 FIXED CORS CONFIGURATION
+// =========================================================================
 
 const allowedOrigins = [
-    // 🛑 YOUR VERCEL FRONTEND DOMAIN
+    // ✅ YOUR ACTUAL VERCEL DOMAIN (from the error logs)
+    'https://projects-l2cf7s8oi-tusharv811-2882s-projects.vercel.app',
+    
+    // ✅ MAIN VERCEL DOMAIN (if different)
     'https://projects-eight-gules.vercel.app', 
     
-    // 🆕 ADD WILDCARD VERCEl.APP DOMAINS
-    'https://*.vercel.app',
+    // ✅ WILDCARD FOR ALL VERCEl SUBDOMAINS (proper format)
+    /https:\/\/.*\.vercel\.app$/,
     
-    // Your Render Backend Domain (sometimes needed for direct access/testing)
+    // ✅ Your Render Backend Domain
     'https://anime-api-backend-u42d.onrender.com', 
 
-    'http://localhost:3000',                 // Common React local development
-    'http://localhost:5173',                 // Common Vue/Vite local development
+    // ✅ Local development
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'http://localhost:5000'
 ]; 
 
 app.use(cors({
     origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps) 
-        // AND allow all listed origins.
+        // Allow requests with no origin (like mobile apps, Postman, server-side requests)
         if (!origin) {
+            console.log('✅ Allowed: No origin (server-side request)');
             callback(null, true);
             return;
         }
         
-        // Check if origin matches any allowed pattern
+        // Check if origin is in allowed list
         const isAllowed = allowedOrigins.some(allowedOrigin => {
-            if (allowedOrigin.includes('*')) {
-                // Handle wildcard domains like *.vercel.app
-                const regex = new RegExp('^' + allowedOrigin.replace('*', '[^.]*') + '$');
-                return regex.test(origin);
+            if (allowedOrigin instanceof RegExp) {
+                return allowedOrigin.test(origin);
             }
             return origin === allowedOrigin;
         });
 
         if (isAllowed) {
+            console.log(`✅ Allowed CORS request from: ${origin}`);
             callback(null, true);
         } else {
-            console.warn(`CORS block: Request from unauthorized origin: ${origin}`);
+            console.warn(`❌ CORS blocked: Request from unauthorized origin: ${origin}`);
+            console.log(`ℹ️  Allowed origins:`, allowedOrigins);
             callback(new Error(`Not allowed by CORS: ${origin}`));
         }
     },
-    credentials: true // ESSENTIAL for sending cookies/authorization tokens
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
-// --- END CORS FIX ---
-// =========================================================================
 
-// Test route
+// =========================================================================
+// 🛠️ EXPLICIT OPTIONS HANDLER FOR PREFLIGHT REQUESTS
+// =========================================================================
+app.options('*', cors()); // Enable preflight for all routes
+
+// Test route with CORS info
 app.get('/', (req, res) => {
     res.json({ 
         message: 'Anime E-commerce API is running!',
         version: '1.0.0',
+        cors: {
+            enabled: true,
+            allowedOrigins: allowedOrigins
+        },
         endpoints: {
             auth: '/api/auth',
             products: '/api/products',
@@ -115,6 +128,7 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
-    console.log(`✅ CORS is configured for specific origins.`);
-    console.log(`✅ Payment routes are now available at /api/payment`);
+    console.log(`✅ CORS is configured for:`);
+    allowedOrigins.forEach(origin => console.log(`   - ${origin}`));
+    console.log(`✅ Payment routes are available at /api/payment`);
 });

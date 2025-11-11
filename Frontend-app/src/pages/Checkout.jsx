@@ -77,7 +77,14 @@ export default function Checkout() {
         totalAmount: calculateTotal(),
       };
 
-      console.log('Sending checkout payload:', checkoutPayload);
+      // In Checkout.jsx, inside handleCheckout()
+// Locate this line:
+// console.log('Sending checkout payload:', checkoutPayload);
+
+// Replace it with this to see the full array details:
+console.log('Sending checkout payload:', JSON.stringify(checkoutPayload, null, 2));
+
+// This will print the full, un-truncated data to your browser console.
 
       // 🆕 CORRECT ENDPOINT - Add /api to the URL
       const response = await fetch(`${API_URL}/api/payment/create-checkout-session`, {

@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Navbar from './components/common/Navbar';
 import Footer from './components/common/Footer';
@@ -16,6 +16,7 @@ import Register from './pages/Register';
 import Profile from './pages/Profile';
 import Orders from './pages/Orders';
 import OrderDetail from './pages/OrderDetail';
+import PaymentSuccess from './pages/PaymentSuccess';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/Dashboard';
@@ -23,40 +24,86 @@ import ProductManagement from './pages/admin/ProductManagement';
 import OrderManagement from './pages/admin/OrderManagement';
 import UserManagement from './pages/admin/UserManagement';
 
+// Layout component
+const AppLayout = () => {
+  return (
+    <div className="flex flex-col min-h-screen overflow-x-hidden w-screen">
+      <Navbar />
+      <main className="flex-grow">
+        <Outlet />
+      </main>
+      <Footer />
+      <Toaster position="top-right" />
+    </div>
+  );
+};
+
+// Create router with future flags
+const router = createBrowserRouter([
+  {
+    element: <AppLayout />,
+    children: [
+      // Public Routes
+      { path: "/", element: <Home /> },
+      { path: "/products", element: <Products /> },
+      { path: "/products/:id", element: <ProductDetail /> },
+      { path: "/login", element: <Login /> },
+      { path: "/register", element: <Register /> },
+
+      // Protected Routes
+      { 
+        path: "/cart", 
+        element: <ProtectedRoute><Cart /></ProtectedRoute> 
+      },
+      { 
+        path: "/checkout", 
+        element: <ProtectedRoute><Checkout /></ProtectedRoute> 
+      },
+      { 
+        path: "/profile", 
+        element: <ProtectedRoute><Profile /></ProtectedRoute> 
+      },
+      { 
+        path: "/orders", 
+        element: <ProtectedRoute><Orders /></ProtectedRoute> 
+      },
+      { 
+        path: "/orders/:id", 
+        element: <ProtectedRoute><OrderDetail /></ProtectedRoute> 
+      },
+      { 
+        path: "/payment-success", 
+        element: <ProtectedRoute><PaymentSuccess /></ProtectedRoute> 
+      },
+
+      // Admin Routes
+      { 
+        path: "/admin", 
+        element: <AdminRoute><AdminDashboard /></AdminRoute> 
+      },
+      { 
+        path: "/admin/products", 
+        element: <AdminRoute><ProductManagement /></AdminRoute> 
+      },
+      { 
+        path: "/admin/orders", 
+        element: <AdminRoute><OrderManagement /></AdminRoute> 
+      },
+      { 
+        path: "/admin/users", 
+        element: <AdminRoute><UserManagement /></AdminRoute> 
+      },
+    ],
+  },
+], {
+  future: {
+    v7_startTransition: true,
+    v7_relativeSplatPath: true,
+  }
+});
+
 function App() {
-return (
- <Router>
-      {/* CRITICAL FIX: Ensures the main container doesn't cause horizontal scroll on mobile. */}
-      <div className="flex flex-col min-h-screen overflow-x-hidden w-screen">
-        <Navbar />
-        <main className="flex-grow">
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Home />} />
-            <Route path="/products" element={<Products />} />
-            <Route path="/products/:id" element={<ProductDetail />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-
-            {/* Protected Routes */}
-            <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
-            <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
-            <Route path="/orders/:id" element={<ProtectedRoute><OrderDetail /></ProtectedRoute>} />
-
-            {/* Admin Routes */}
-            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-            <Route path="/admin/products" element={<AdminRoute><ProductManagement /></AdminRoute>} />
-            <Route path="/admin/orders" element={<AdminRoute><OrderManagement /></AdminRoute>} />
-            <Route path="/admin/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
-          </Routes>
-        </main>
-        <Footer />
-        <Toaster position="top-right" />
-      </div>
-    </Router>
-  );
+  return <RouterProvider router={router} />;
 }
 
 export default App;

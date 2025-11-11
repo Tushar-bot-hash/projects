@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Package, MapPin, CreditCard, Truck, CheckCircle, X } from 'lucide-react';
-import { orderAPI } from '../services/api';
 import Loading from '../components/common/Loading';
 import toast from 'react-hot-toast';
+
+const API_URL = import.meta.env.VITE_API_URL || 'https://anime-api-backend-u42d.onrender.com/api';
 
 const OrderDetail = () => {
   const { id } = useParams();
@@ -17,8 +18,19 @@ const OrderDetail = () => {
 
   const fetchOrder = async () => {
     try {
-      const response = await orderAPI.getOrderById(id);
-      setOrder(response.data.order);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/orders/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Order not found');
+      }
+
+      const data = await response.json();
+      setOrder(data);
     } catch (error) {
       console.error('Error fetching order:', error);
       toast.error('Order not found');
@@ -32,11 +44,23 @@ const OrderDetail = () => {
     if (!window.confirm('Are you sure you want to cancel this order?')) return;
 
     try {
-      await orderAPI.cancelOrder(id);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/orders/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message);
+      }
+
       toast.success('Order cancelled successfully');
       fetchOrder();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to cancel order');
+      toast.error(error.message || 'Failed to cancel order');
     }
   };
 
@@ -152,10 +176,11 @@ const OrderDetail = () => {
             <div className="card">
               <h2 className="text-xl font-bold mb-4">Order Items</h2>
               <div className="space-y-4">
-                {order.orderItems.map((item) => (
+                {/* Support both old format (orderItems) and new format (items) */}
+                {(order.items || order.orderItems || []).map((item) => (
                   <div key={item._id} className="flex gap-4 pb-4 border-b last:border-0">
                     <img
-                      src={item.image}
+                      src={item.image || 'https://via.placeholder.com/80'}
                       alt={item.name}
                       className="w-20 h-20 object-cover rounded"
                     />
@@ -190,21 +215,33 @@ const OrderDetail = () => {
                   <span className="text-gray-600">Order Date</span>
                   <span>{formatDate(order.createdAt)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Subtotal</span>
-                  <span>₹{order.itemsPrice.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Shipping</span>
-                  <span>₹{order.shippingPrice.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Tax</span>
-                  <span>₹{order.taxPrice.toFixed(2)}</span>
-                </div>
+                {/* Support both old format (itemsPrice, shippingPrice, taxPrice) and new format (totalAmount only) */}
+                {order.itemsPrice !== undefined ? (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Subtotal</span>
+                      <span>₹{order.itemsPrice.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Shipping</span>
+                      <span>₹{order.shippingPrice.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Tax</span>
+                      <span>₹{order.taxPrice.toFixed(2)}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Amount</span>
+                    <span>₹{order.totalAmount.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="border-t pt-2 flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span className="text-primary-600">₹{order.totalPrice.toFixed(2)}</span>
+                  <span className="text-primary-600">
+                    ₹{(order.totalPrice || order.totalAmount).toFixed(2)}
+                  </span>
                 </div>
               </div>
             </div>
@@ -216,10 +253,26 @@ const OrderDetail = () => {
                 <h2 className="text-lg font-bold">Shipping Address</h2>
               </div>
               <div className="text-sm text-gray-700">
-                <p>{order.shippingAddress.street}</p>
-                <p>{order.shippingAddress.city}, {order.shippingAddress.state}</p>
-                <p>{order.shippingAddress.zipCode}</p>
-                <p className="mt-2">Phone: {order.shippingAddress.phone}</p>
+                {order.shippingAddress ? (
+                  <>
+                    <p>{order.shippingAddress.fullName || 'N/A'}</p>
+                    {order.shippingAddress.street && <p>{order.shippingAddress.street}</p>}
+                    {order.shippingAddress.address && <p>{order.shippingAddress.address}</p>}
+                    <p>
+                      {order.shippingAddress.city && `${order.shippingAddress.city}, `}
+                      {order.shippingAddress.state}
+                    </p>
+                    <p>{order.shippingAddress.zipCode}</p>
+                    {order.shippingAddress.phone && (
+                      <p className="mt-2">Phone: {order.shippingAddress.phone}</p>
+                    )}
+                    {order.shippingAddress.email && (
+                      <p>Email: {order.shippingAddress.email}</p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-gray-500">Address information not available</p>
+                )}
               </div>
             </div>
 
@@ -230,9 +283,11 @@ const OrderDetail = () => {
                 <h2 className="text-lg font-bold">Payment Method</h2>
               </div>
               <div className="text-sm">
-                <div className="capitalize mb-2">{order.paymentMethod}</div>
-                <span className={`badge ${order.isPaid ? 'badge-success' : 'badge-warning'}`}>
-                  {order.isPaid ? 'Paid' : 'Pending'}
+                <div className="capitalize mb-2">{order.paymentMethod || 'stripe'}</div>
+                <span className={`badge ${
+                  (order.isPaid || order.paymentStatus === 'paid') ? 'badge-success' : 'badge-warning'
+                }`}>
+                  {(order.isPaid || order.paymentStatus === 'paid') ? 'Paid' : 'Pending'}
                 </span>
               </div>
             </div>

@@ -101,6 +101,13 @@ export const orderAPI = {
   updateOrderStatus: (id, data) => api.put(`/orders/${id}/status`, data),
 };
 
+// 🆕 PAYMENT API - ADDED THIS SECTION
+export const paymentAPI = {
+  createCheckoutSession: (data) => api.post('/payment/create-checkout-session', data),
+  verifyPayment: (sessionId) => api.get(`/payment/verify/${sessionId}`),
+  testPayment: () => api.get('/payment/test'), // For testing if payment routes work
+};
+
 // Admin API
 export const adminAPI = {
   getStats: () => api.get('/admin/stats'),

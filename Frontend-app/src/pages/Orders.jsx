@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Package, ChevronRight } from 'lucide-react';
-import { orderAPI } from '../services/api';
 import Loading from '../components/common/Loading';
+import toast from 'react-hot-toast';
+
+const API_URL = import.meta.env.VITE_API_URL || 'https://anime-api-backend-u42d.onrender.com';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
@@ -14,10 +16,23 @@ const Orders = () => {
 
   const fetchOrders = async () => {
     try {
-      const response = await orderAPI.getMyOrders();
-      setOrders(response.data.orders);
+      const token = localStorage.getItem('token');
+      // 🆕 FIXED: Added /api to the URL
+      const response = await fetch(`${API_URL}/api/orders/myorders`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch orders');
+      }
+
+      const data = await response.json();
+      setOrders(data.orders || data || []);
     } catch (error) {
       console.error('Error fetching orders:', error);
+      toast.error('Failed to load orders');
     } finally {
       setLoading(false);
     }
@@ -70,7 +85,7 @@ const Orders = () => {
                   {/* Order Info */}
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <span className="font-semibold">Order #{order._id.slice(-8)}</span>
+                      <span className="font-semibold">Order #{order._id?.slice(-8)}</span>
                       <span className={`badge ${getStatusColor(order.orderStatus)}`}>
                         {order.orderStatus}
                       </span>
@@ -78,22 +93,24 @@ const Orders = () => {
                     
                     <div className="text-sm text-gray-600 mb-3">
                       <div>Placed on {formatDate(order.createdAt)}</div>
-                      <div>{order.orderItems.length} item(s)</div>
+                      <div>
+                        {(order.items || order.orderItems || []).length} item(s)
+                      </div>
                     </div>
 
                     {/* Order Items Preview */}
                     <div className="flex gap-2 overflow-x-auto pb-2">
-                      {order.orderItems.slice(0, 3).map((item, index) => (
+                      {(order.items || order.orderItems || []).slice(0, 3).map((item, index) => (
                         <img
                           key={index}
-                          src={item.image}
+                          src={item.image || 'https://via.placeholder.com/64'}
                           alt={item.name}
                           className="w-16 h-16 object-cover rounded border"
                         />
                       ))}
-                      {order.orderItems.length > 3 && (
+                      {(order.items || order.orderItems || []).length > 3 && (
                         <div className="w-16 h-16 bg-gray-100 rounded border flex items-center justify-center text-sm text-gray-600">
-                          +{order.orderItems.length - 3}
+                          +{(order.items || order.orderItems).length - 3}
                         </div>
                       )}
                     </div>
@@ -103,7 +120,9 @@ const Orders = () => {
                   <div className="flex items-center gap-4">
                     <div className="text-right">
                       <div className="text-sm text-gray-600">Total</div>
-                      <div className="text-xl font-bold">₹{order.totalPrice.toFixed(2)}</div>
+                      <div className="text-xl font-bold">
+                        ₹{(order.totalPrice || order.totalAmount || 0).toFixed(2)}
+                      </div>
                     </div>
                     <ChevronRight className="text-gray-400" size={24} />
                   </div>

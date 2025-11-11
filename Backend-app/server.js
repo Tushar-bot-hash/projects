@@ -23,7 +23,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // =========================================================================
-// 🚀 CORS FIX: Dynamic Origin Reflection 
+// 🚀 CORS FIX: Updated with wildcard Vercel domains
 // This resolves the "credentials with wildcard" error by allowing your 
 // specific Vercel domain to communicate with your Render backend.
 
@@ -31,19 +31,36 @@ const allowedOrigins = [
     // 🛑 YOUR VERCEL FRONTEND DOMAIN
     'https://projects-eight-gules.vercel.app', 
     
+    // 🆕 ADD WILDCARD VERCEl.APP DOMAINS
+    'https://*.vercel.app',
+    
     // Your Render Backend Domain (sometimes needed for direct access/testing)
     'https://anime-api-backend-u42d.onrender.com', 
 
     'http://localhost:3000',                 // Common React local development
     'http://localhost:5173',                 // Common Vue/Vite local development
-    // Add any other local ports you use, if necessary
 ]; 
 
 app.use(cors({
     origin: (origin, callback) => {
         // Allow requests with no origin (like mobile apps) 
         // AND allow all listed origins.
-        if (!origin || allowedOrigins.includes(origin)) {
+        if (!origin) {
+            callback(null, true);
+            return;
+        }
+        
+        // Check if origin matches any allowed pattern
+        const isAllowed = allowedOrigins.some(allowedOrigin => {
+            if (allowedOrigin.includes('*')) {
+                // Handle wildcard domains like *.vercel.app
+                const regex = new RegExp('^' + allowedOrigin.replace('*', '[^.]*') + '$');
+                return regex.test(origin);
+            }
+            return origin === allowedOrigin;
+        });
+
+        if (isAllowed) {
             callback(null, true);
         } else {
             console.warn(`CORS block: Request from unauthorized origin: ${origin}`);
@@ -66,7 +83,7 @@ app.get('/', (req, res) => {
             cart: '/api/cart',
             orders: '/api/orders',
             admin: '/api/admin',
-            payment: '/api/payment' // 🆕 Added payment endpoint
+            payment: '/api/payment'
         }
     });
 });
@@ -77,7 +94,7 @@ app.use('/api/products', require('./src/routes/products'));
 app.use('/api/cart', require('./src/routes/cart'));
 app.use('/api/orders', require('./src/routes/orders'));
 app.use('/api/admin', require('./src/routes/admin'));
-app.use('/api/payment', require('./src/routes/payment')); // 🆕 ADDED PAYMENT ROUTE
+app.use('/api/payment', require('./src/routes/payment'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -99,5 +116,5 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
     console.log(`✅ CORS is configured for specific origins.`);
-    console.log(`✅ Payment routes are now available at /api/payment`); // 🆕 Added confirmation
+    console.log(`✅ Payment routes are now available at /api/payment`);
 });

@@ -1,12 +1,10 @@
 import axios from 'axios';
 
-// 🚨 TEMPORARY FIX: Directly use your Render backend URL
-// This will fix the CORS issues immediately
+// 🚨 TEMPORARY FIX: Direct URL to your Render backend
 const API_URL = 'https://anime-api-backend-u42d.onrender.com/api';
 
-// Optional: Add console log to verify the URL (remove after testing)
 console.log('🔧 API Configuration:', {
-  envVariable: 'Using direct Render URL (temporary fix)',
+  envVariable: 'Using direct Render URL',
   finalURL: API_URL,
   mode: import.meta.env.MODE
 });
@@ -17,8 +15,6 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  // ⚠️ REMOVE THIS LINE TEMPORARILY to fix CORS issues
-  // withCredentials: true,
 });
 
 // Add token to requests
@@ -39,7 +35,6 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Enhanced error logging
     console.error('API Error:', {
       message: error.message,
       status: error.response?.status,
@@ -48,7 +43,6 @@ api.interceptors.response.use(
     });
 
     if (error.response?.status === 401) {
-      // Token expired or invalid
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
@@ -94,16 +88,15 @@ export const orderAPI = {
   getOrderById: (id) => api.get(`/orders/${id}`),
   updateOrderToPaid: (id, data) => api.put(`/orders/${id}/pay`, data),
   cancelOrder: (id) => api.put(`/orders/${id}/cancel`),
-  // Admin
   getAllOrders: () => api.get('/orders'),
   updateOrderStatus: (id, data) => api.put(`/orders/${id}/status`, data),
 };
 
-// 🆕 PAYMENT API - ADDED THIS SECTION
+// Payment API
 export const paymentAPI = {
   createCheckoutSession: (data) => api.post('/payment/create-checkout-session', data),
   verifyPayment: (sessionId) => api.get(`/payment/verify/${sessionId}`),
-  testPayment: () => api.get('/payment/test'), // For testing if payment routes work
+  testPayment: () => api.get('/payment/test'),
 };
 
 // Admin API

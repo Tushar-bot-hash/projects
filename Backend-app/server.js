@@ -24,7 +24,7 @@ const app = express();
 // List of allowed origins
 const allowedOrigins = [
     'https://projects-l2cf7s8oi-tusharv811-2882s-projects.vercel.app',
-    'https://projects-eight-gules.vercel.app', 
+    'https://projects-lemon-eight.vercel.app/', 
     'https://anime-api-backend-u42d.onrender.com', 
     'http://localhost:3000',
     'http://localhost:5173',

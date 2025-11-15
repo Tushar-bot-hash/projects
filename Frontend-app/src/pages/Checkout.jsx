@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CreditCard, ShoppingCart, Loader2, AlertCircle, ArrowLeft, MapPin, Plus } from 'lucide-react';
+import { CreditCard, ShoppingCart, Loader2, AlertCircle, ArrowLeft, MapPin, Plus, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 import useCartStore from '../store/cartStore';
 import useAuthStore from '../store/authStore';
@@ -15,6 +15,7 @@ export default function Checkout() {
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState('');
+  const [saveShippingInfo, setSaveShippingInfo] = useState(false);
   const navigate = useNavigate();
 
   // Form state
@@ -149,6 +150,26 @@ export default function Checkout() {
     }
   };
 
+  // Save shipping info to user profile
+  const saveShippingInfoToProfile = async (shippingData) => {
+    try {
+      const addressData = {
+        street: shippingData.address,
+        city: shippingData.city,
+        state: shippingData.state,
+        zipCode: shippingData.zipCode,
+        phone: shippingData.phone,
+        isDefault: false
+      };
+      
+      await authAPI.addAddress(addressData);
+      toast.success('Shipping info saved to your profile!');
+    } catch (error) {
+      console.error('Failed to save shipping info:', error);
+      // Don't show error toast as it's optional feature
+    }
+  };
+
   const validateForm = () => {
     const errors = {};
     const requiredFields = [
@@ -206,6 +227,11 @@ export default function Checkout() {
       if (!cartItems || cartItems.length === 0) {
         toast.error('Your cart is empty');
         return;
+      }
+
+      // Save shipping info if user requested
+      if (saveShippingInfo) {
+        await saveShippingInfoToProfile(formData);
       }
 
       // Prepare items for backend
@@ -535,6 +561,27 @@ export default function Checkout() {
                     className="w-full bg-black/30 border border-purple-500/30 rounded-lg px-4 py-3 text-white focus:border-purple-500 focus:outline-none"
                     disabled
                   />
+                </div>
+
+                {/* Save Shipping Info Checkbox */}
+                <div className="md:col-span-2 pt-4 border-t border-purple-500/30">
+                  <label className="flex items-start space-x-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={saveShippingInfo}
+                      onChange={(e) => setSaveShippingInfo(e.target.checked)}
+                      className="w-4 h-4 text-purple-600 bg-black/30 border-purple-500/30 rounded focus:ring-purple-500 focus:ring-2 mt-1"
+                    />
+                    <div>
+                      <span className="text-white font-medium flex items-center gap-2">
+                        <Save className="w-4 h-4" />
+                        Save this shipping information
+                      </span>
+                      <p className="text-gray-400 text-sm mt-1">
+                        We'll save this address to your profile for faster checkout next time
+                      </p>
+                    </div>
+                  </label>
                 </div>
               </div>
             </div>

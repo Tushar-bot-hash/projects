@@ -1,27 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Star, ThumbsUp } from 'lucide-react';
-import useReviewStore from '../store/reviewStore';
-import useAuthStore from '../store/authStore';
+import { Star, ThumbsUp, Trash2, Edit } from 'lucide-react';
+import { productAPI, reviewAPI } from '../../services/api';
+import useAuthStore from '../../store/authStore';
 import toast from 'react-hot-toast';
 
 const ProductReviews = ({ productId }) => {
-  const {
-    reviews,
-    reviewStats,
-    canReview,
-    loading,
-    submitting,
-    hasMore,
-    currentPage,
-    fetchProductReviews,
-    fetchReviewStats,
-    checkCanReview,
-    createReview,
-    markHelpful
-  } = useReviewStore();
-  
-  const { isAuthenticated } = useAuthStore();
+  const [reviews, setReviews] = useState([]);
+  const [reviewStats, setReviewStats] = useState(null);
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const [canReview, setCanReview] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [editingReview, setEditingReview] = useState(null);
+  
+  const { isAuthenticated, user } = useAuthStore();
+
+  // Review form state
   const [reviewForm, setReviewForm] = useState({
     rating: 5,
     comment: '',
@@ -29,12 +25,47 @@ const ProductReviews = ({ productId }) => {
   });
 
   useEffect(() => {
-    fetchProductReviews(productId);
-    fetchReviewStats(productId);
-    if (isAuthenticated) {
-      checkCanReview(productId);
+    fetchReviews();
+    fetchReviewStats();
+    checkCanReview();
+  }, [productId]);
+
+  const fetchReviews = async (page = 1) => {
+    try {
+      const response = await productAPI.getProductReviews(productId, page);
+      if (page === 1) {
+        setReviews(response.data.reviews);
+      } else {
+        setReviews(prev => [...prev, ...response.data.reviews]);
+      }
+      setCurrentPage(page);
+      setHasMore(response.data.hasMore);
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
     }
-  }, [productId, isAuthenticated]);
+  };
+
+  const fetchReviewStats = async () => {
+    try {
+      const response = await productAPI.getReviewStats(productId);
+      setReviewStats(response.data);
+    } catch (error) {
+      console.error('Error fetching review stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const checkCanReview = async () => {
+    if (!isAuthenticated) return;
+    
+    try {
+      const response = await productAPI.checkCanReview(productId);
+      setCanReview(response.data.canReview);
+    } catch (error) {
+      console.error('Error checking review eligibility:', error);
+    }
+  };
 
   const handleSubmitReview = async (e) => {
     e.preventDefault();
@@ -43,14 +74,58 @@ const ProductReviews = ({ productId }) => {
       return;
     }
 
-    const result = await createReview({
-      product: productId,
-      ...reviewForm
-    });
-
-    if (result.success) {
+    setSubmitting(true);
+    try {
+      if (editingReview) {
+        // Update existing review
+        await reviewAPI.updateReview(editingReview._id, reviewForm);
+        toast.success('Review updated successfully!');
+      } else {
+        // Create new review
+        await productAPI.submitReview(productId, reviewForm);
+        toast.success('Review submitted successfully!');
+      }
+      
       setReviewForm({ rating: 5, comment: '', images: [] });
       setShowReviewForm(false);
+      setEditingReview(null);
+      fetchReviews(1);
+      fetchReviewStats();
+      checkCanReview();
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      const errorMessage = error.response?.data?.message || 'Error submitting review';
+      toast.error(errorMessage);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEditReview = (review) => {
+    setEditingReview(review);
+    setReviewForm({
+      rating: review.rating,
+      comment: review.comment,
+      images: review.images || []
+    });
+    setShowReviewForm(true);
+  };
+
+  const handleDeleteReview = async (reviewId) => {
+    if (!window.confirm('Are you sure you want to delete this review?')) {
+      return;
+    }
+
+    try {
+      await reviewAPI.deleteReview(reviewId);
+      setReviews(reviews.filter(review => review._id !== reviewId));
+      fetchReviewStats();
+      checkCanReview();
+      toast.success('Review deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting review:', error);
+      const errorMessage = error.response?.data?.message || 'Error deleting review';
+      toast.error(errorMessage);
     }
   };
 
@@ -59,11 +134,30 @@ const ProductReviews = ({ productId }) => {
       toast.error('Please login to mark reviews as helpful');
       return;
     }
-    await markHelpful(reviewId);
+
+    try {
+      await reviewAPI.markHelpful(reviewId);
+      fetchReviews(currentPage);
+      toast.success('Thanks for your feedback!');
+    } catch (error) {
+      console.error('Error marking helpful:', error);
+      toast.error('Error marking review as helpful');
+    }
   };
 
   const loadMoreReviews = () => {
-    fetchProductReviews(productId, currentPage + 1);
+    fetchReviews(currentPage + 1);
+  };
+
+  const cancelEdit = () => {
+    setEditingReview(null);
+    setReviewForm({ rating: 5, comment: '', images: [] });
+    setShowReviewForm(false);
+  };
+
+  // Check if current user is the author of a review
+  const isReviewAuthor = (review) => {
+    return isAuthenticated && user && review.user?._id === user.id;
   };
 
   if (loading && reviews.length === 0) {
@@ -127,13 +221,13 @@ const ProductReviews = ({ productId }) => {
       </div>
 
       {/* Write Review Button */}
-      {isAuthenticated && canReview?.canReview && (
+      {isAuthenticated && canReview && !editingReview && (
         <button 
           className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors mb-6 disabled:opacity-50"
           onClick={() => setShowReviewForm(true)}
           disabled={submitting}
         >
-          {submitting ? 'Submitting...' : 'Write a Review'}
+          Write a Review
         </button>
       )}
 
@@ -141,7 +235,9 @@ const ProductReviews = ({ productId }) => {
       {showReviewForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">Write Your Review</h3>
+            <h3 className="text-xl font-bold mb-4">
+              {editingReview ? 'Edit Your Review' : 'Write Your Review'}
+            </h3>
             <form onSubmit={handleSubmitReview}>
               {/* Star Rating */}
               <div className="mb-4">
@@ -184,12 +280,12 @@ const ProductReviews = ({ productId }) => {
                   className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                   disabled={submitting}
                 >
-                  {submitting ? 'Submitting...' : 'Submit Review'}
+                  {submitting ? 'Submitting...' : (editingReview ? 'Update Review' : 'Submit Review')}
                 </button>
                 <button 
                   type="button" 
                   className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 transition-colors"
-                  onClick={() => setShowReviewForm(false)}
+                  onClick={cancelEdit}
                   disabled={submitting}
                 >
                   Cancel
@@ -214,6 +310,9 @@ const ProductReviews = ({ productId }) => {
                   key={review._id} 
                   review={review} 
                   onHelpful={handleHelpful}
+                  onEdit={handleEditReview}
+                  onDelete={handleDeleteReview}
+                  isAuthor={isReviewAuthor(review)}
                 />
               ))}
             </div>
@@ -237,7 +336,7 @@ const ProductReviews = ({ productId }) => {
 };
 
 // Individual Review Card Component
-const ReviewCard = ({ review, onHelpful }) => {
+const ReviewCard = ({ review, onHelpful, onEdit, onDelete, isAuthor }) => {
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4">
@@ -287,7 +386,7 @@ const ReviewCard = ({ review, onHelpful }) => {
         )}
       </div>
 
-      <div className="review-actions">
+      <div className="review-actions flex justify-between items-center">
         <button 
           className="flex items-center gap-1 text-gray-600 hover:text-blue-600 transition-colors"
           onClick={() => onHelpful(review._id)}
@@ -295,6 +394,26 @@ const ReviewCard = ({ review, onHelpful }) => {
           <ThumbsUp size={16} />
           <span>Helpful ({review.helpfulCount || 0})</span>
         </button>
+
+        {/* Edit/Delete buttons for review author */}
+        {isAuthor && (
+          <div className="flex gap-2">
+            <button 
+              className="flex items-center gap-1 text-gray-600 hover:text-blue-600 transition-colors"
+              onClick={() => onEdit(review)}
+            >
+              <Edit size={16} />
+              <span>Edit</span>
+            </button>
+            <button 
+              className="flex items-center gap-1 text-red-600 hover:text-red-700 transition-colors"
+              onClick={() => onDelete(review._id)}
+            >
+              <Trash2 size={16} />
+              <span>Delete</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

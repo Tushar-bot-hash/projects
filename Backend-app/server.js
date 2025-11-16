@@ -70,8 +70,8 @@ app.use((req, res, next) => {
     }
     
     res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, 'PUT', 'DELETE', 'OPTIONS', 'PATCH');
+    res.header('Access-Control-Allow-Headers', 'Content-Type', 'Authorization', 'X-Requested-With', 'Accept');
     
     // Handle preflight requests
     if (req.method === 'OPTIONS') {
@@ -112,7 +112,7 @@ app.use('/api/cart', require('./src/routes/cart'));
 app.use('/api/orders', require('./src/routes/orders'));
 app.use('/api/admin', require('./src/routes/admin'));
 app.use('/api/payment', require('./src/routes/payment'));
-app.use('/api/reviews', require('./src/routes/reviews')); // ✅ ADDED REVIEWS ROUTES
+app.use('/api/reviews', require('./src/routes/review')); // ✅ FIXED: Changed from 'reviews' to 'review'
 
 // Error handling middleware
 app.use((err, req, res, next) => {

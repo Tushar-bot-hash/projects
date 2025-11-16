@@ -28,6 +28,10 @@ const ProductCard = ({ product }) => {
   const displayPrice = product.discountPrice || product.price;
   const hasDiscount = product.discountPrice && product.discountPrice < product.price;
 
+  // Calculate average rating and review count from your review system
+  const averageRating = product.averageRating || product.rating || 0;
+  const reviewCount = product.reviewCount || product.numReviews || 0;
+
   return (
     <Link to={`/products/${product._id}`} className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer block">
       {/* Image */}
@@ -42,6 +46,15 @@ const ProductCard = ({ product }) => {
             SALE
           </span>
         )}
+        
+        {/* Rating Badge Overlay */}
+        {averageRating > 0 && (
+          <div className="absolute top-2 left-2 bg-black/80 text-white px-2 py-1 rounded-full text-xs flex items-center gap-1">
+            <Star size={12} fill="currentColor" className="text-yellow-400" />
+            <span>{averageRating.toFixed(1)}</span>
+          </div>
+        )}
+
         {product.stock === 0 && (
           <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
             <span className="text-white font-bold text-lg">Out of Stock</span>
@@ -65,16 +78,20 @@ const ProductCard = ({ product }) => {
         {/* Rating */}
         <div className="flex items-center mb-3">
           <div className="flex items-center">
-            {[...Array(5)].map((_, i) => (
+            {[1, 2, 3, 4, 5].map((star) => (
               <Star
-                key={i}
+                key={star}
                 size={14}
-                className={i < Math.floor(product.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}
+                className={
+                  star <= Math.floor(averageRating) 
+                    ? 'fill-yellow-400 text-yellow-400' 
+                    : 'text-gray-300'
+                }
               />
             ))}
           </div>
           <span className="text-sm text-gray-600 ml-2">
-            ({product.numReviews})
+            ({reviewCount} reviews)
           </span>
         </div>
 

@@ -70,6 +70,19 @@ export const productAPI = {
   createProduct: (data) => api.post('/products', data),
   updateProduct: (id, data) => api.put(`/products/${id}`, data),
   deleteProduct: (id) => api.delete(`/products/${id}`),
+  
+  // ✅ ADD THESE PRODUCT REVIEW ENDPOINTS
+  getProductReviews: (productId, page = 1, limit = 10) => 
+    api.get(`/products/${productId}/reviews?page=${page}&limit=${limit}`),
+  
+  getReviewStats: (productId) => 
+    api.get(`/products/${productId}/reviews/stats`),
+  
+  checkCanReview: (productId) => 
+    api.get(`/products/${productId}/can-review`),
+  
+  submitReview: (productId, data) => 
+    api.post(`/products/${productId}/reviews`, data),
 };
 
 // Cart API
@@ -99,9 +112,9 @@ export const paymentAPI = {
   testPayment: () => api.get('/payment/test'),
 };
 
-// Review API
+// Review API (Keep these for user-specific review operations)
 export const reviewAPI = {
-  // Get reviews for a product
+  // Get reviews for a product (alternative endpoint)
   getProductReviews: (productId, page = 1, limit = 10) => 
     api.get(`/reviews/product/${productId}?page=${page}&limit=${limit}`),
   
@@ -109,7 +122,7 @@ export const reviewAPI = {
   getUserReviews: (page = 1, limit = 10) => 
     api.get(`/reviews/user?page=${page}&limit=${limit}`),
   
-  // Create a new review
+  // Create a new review (alternative endpoint)
   createReview: (data) => api.post('/reviews', data),
   
   // Update a review
@@ -121,10 +134,10 @@ export const reviewAPI = {
   // Mark review as helpful
   markHelpful: (reviewId) => api.post(`/reviews/${reviewId}/helpful`),
   
-  // Check if user can review a product (has purchased it)
+  // Check if user can review a product (has purchased it) - alternative endpoint
   canReviewProduct: (productId) => api.get(`/reviews/can-review/${productId}`),
   
-  // Get review statistics for a product
+  // Get review statistics for a product (alternative endpoint)
   getReviewStats: (productId) => api.get(`/reviews/stats/${productId}`),
 };
 

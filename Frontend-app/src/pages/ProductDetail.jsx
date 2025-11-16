@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Star, Minus, Plus, Heart } from 'lucide-react';
+import { ShoppingCart, Star, Minus, Plus, Heart, MessageSquare } from 'lucide-react';
 import { productAPI } from '../services/api';
 import useCartStore from '../store/cartStore';
 import useAuthStore from '../store/authStore';
 import Loading from '../components/common/Loading';
+import ProductReviews from '../components/ProductReviews';
 import toast from 'react-hot-toast';
 
 const ProductDetail = () => {
@@ -19,9 +20,12 @@ const ProductDetail = () => {
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [quantity, setQuantity] = useState(1);
+  const [activeTab, setActiveTab] = useState('description');
+  const [reviewStats, setReviewStats] = useState(null);
 
   useEffect(() => {
     fetchProduct();
+    fetchReviewStats();
   }, [id]);
 
   const fetchProduct = async () => {
@@ -40,6 +44,15 @@ const ProductDetail = () => {
       navigate('/products');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchReviewStats = async () => {
+    try {
+      const response = await productAPI.getReviewStats(id);
+      setReviewStats(response.data);
+    } catch (error) {
+      console.error('Error fetching review stats:', error);
     }
   };
 
@@ -64,6 +77,10 @@ const ProductDetail = () => {
 
   const displayPrice = product?.discountPrice || product?.price;
   const hasDiscount = product?.discountPrice && product.discountPrice < product.price;
+
+  // Use review stats if available, otherwise fall back to product data
+  const averageRating = reviewStats?.averageRating || product?.averageRating || product?.rating || 0;
+  const reviewCount = reviewStats?.totalReviews || product?.reviewCount || product?.numReviews || 0;
 
   if (loading) return <Loading fullScreen />;
   if (!product) return null;
@@ -117,17 +134,26 @@ const ProductDetail = () => {
               {/* Rating */}
               <div className="flex items-center mb-4">
                 <div className="flex items-center">
-                  {[...Array(5)].map((_, i) => (
+                  {[1, 2, 3, 4, 5].map((star) => (
                     <Star
-                      key={i}
+                      key={star}
                       size={20}
-                      className={i < Math.floor(product.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}
+                      className={
+                        star <= Math.floor(averageRating) 
+                          ? 'fill-yellow-400 text-yellow-400' 
+                          : 'text-gray-300'
+                      }
                     />
                   ))}
                 </div>
                 <span className="ml-2 text-gray-600">
-                  ({product.numReviews} reviews)
+                  ({reviewCount} reviews)
                 </span>
+                {reviewStats && (
+                  <span className="ml-2 text-sm text-gray-500">
+                    • {reviewStats.averageRating.toFixed(1)} out of 5
+                  </span>
+                )}
               </div>
 
               {/* Price */}
@@ -238,25 +264,59 @@ const ProductDetail = () => {
                 </button>
               </div>
 
-              {/* Description */}
+              {/* Tabs for Description and Reviews */}
               <div className="border-t pt-6">
-                <h3 className="font-semibold text-lg mb-3">Product Description</h3>
-                <p className="text-gray-700 leading-relaxed">{product.description}</p>
-              </div>
-
-              {/* Characters */}
-              {product.characters?.length > 0 && (
-                <div className="mt-6">
-                  <h3 className="font-semibold mb-2">Featured Characters:</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {product.characters.map((char, index) => (
-                      <span key={index} className="badge bg-purple-100 text-purple-800">
-                        {char}
-                      </span>
-                    ))}
-                  </div>
+                <div className="flex border-b mb-4">
+                  <button
+                    onClick={() => setActiveTab('description')}
+                    className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+                      activeTab === 'description'
+                        ? 'border-primary-600 text-primary-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Description
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('reviews')}
+                    className={`px-4 py-2 font-medium border-b-2 transition-colors flex items-center gap-2 ${
+                      activeTab === 'reviews'
+                        ? 'border-primary-600 text-primary-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    <MessageSquare size={16} />
+                    Reviews ({reviewCount})
+                  </button>
                 </div>
-              )}
+
+                {activeTab === 'description' && (
+                  <div>
+                    <h3 className="font-semibold text-lg mb-3">Product Description</h3>
+                    <p className="text-gray-700 leading-relaxed">{product.description}</p>
+                    
+                    {/* Characters */}
+                    {product.characters?.length > 0 && (
+                      <div className="mt-6">
+                        <h3 className="font-semibold mb-2">Featured Characters:</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {product.characters.map((char, index) => (
+                            <span key={index} className="badge bg-purple-100 text-purple-800">
+                              {char}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === 'reviews' && (
+                  <div>
+                    <ProductReviews productId={id} />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

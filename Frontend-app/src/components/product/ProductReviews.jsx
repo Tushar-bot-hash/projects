@@ -1,21 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { Star, ThumbsUp } from 'lucide-react';
-import { productAPI, reviewAPI } from '../services/api';
+import useReviewStore from '../store/reviewStore';
 import useAuthStore from '../store/authStore';
 import toast from 'react-hot-toast';
 
 const ProductReviews = ({ productId }) => {
-  const [reviews, setReviews] = useState([]);
-  const [reviewStats, setReviewStats] = useState(null);
-  const [showReviewForm, setShowReviewForm] = useState(false);
-  const [canReview, setCanReview] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [hasMore, setHasMore] = useState(false);
+  const {
+    reviews,
+    reviewStats,
+    canReview,
+    loading,
+    submitting,
+    hasMore,
+    currentPage,
+    fetchProductReviews,
+    fetchReviewStats,
+    checkCanReview,
+    createReview,
+    markHelpful
+  } = useReviewStore();
   
   const { isAuthenticated } = useAuthStore();
-
-  // Review form state
+  const [showReviewForm, setShowReviewForm] = useState(false);
   const [reviewForm, setReviewForm] = useState({
     rating: 5,
     comment: '',
@@ -23,47 +29,12 @@ const ProductReviews = ({ productId }) => {
   });
 
   useEffect(() => {
-    fetchReviews();
-    fetchReviewStats();
-    checkCanReview();
-  }, [productId]);
-
-  const fetchReviews = async (page = 1) => {
-    try {
-      const response = await productAPI.getProductReviews(productId, page);
-      if (page === 1) {
-        setReviews(response.data.reviews);
-      } else {
-        setReviews(prev => [...prev, ...response.data.reviews]);
-      }
-      setCurrentPage(page);
-      setHasMore(response.data.hasMore);
-    } catch (error) {
-      console.error('Error fetching reviews:', error);
+    fetchProductReviews(productId);
+    fetchReviewStats(productId);
+    if (isAuthenticated) {
+      checkCanReview(productId);
     }
-  };
-
-  const fetchReviewStats = async () => {
-    try {
-      const response = await productAPI.getReviewStats(productId);
-      setReviewStats(response.data);
-    } catch (error) {
-      console.error('Error fetching review stats:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const checkCanReview = async () => {
-    if (!isAuthenticated) return;
-    
-    try {
-      const response = await productAPI.checkCanReview(productId);
-      setCanReview(response.data.canReview);
-    } catch (error) {
-      console.error('Error checking review eligibility:', error);
-    }
-  };
+  }, [productId, isAuthenticated]);
 
   const handleSubmitReview = async (e) => {
     e.preventDefault();
@@ -72,19 +43,14 @@ const ProductReviews = ({ productId }) => {
       return;
     }
 
-    try {
-      await productAPI.submitReview(productId, reviewForm);
-      
+    const result = await createReview({
+      product: productId,
+      ...reviewForm
+    });
+
+    if (result.success) {
       setReviewForm({ rating: 5, comment: '', images: [] });
       setShowReviewForm(false);
-      fetchReviews(1);
-      fetchReviewStats();
-      checkCanReview();
-      toast.success('Review submitted successfully!');
-    } catch (error) {
-      console.error('Error submitting review:', error);
-      const errorMessage = error.response?.data?.message || 'Error submitting review';
-      toast.error(errorMessage);
     }
   };
 
@@ -93,22 +59,16 @@ const ProductReviews = ({ productId }) => {
       toast.error('Please login to mark reviews as helpful');
       return;
     }
-
-    try {
-      await reviewAPI.markHelpful(reviewId);
-      fetchReviews(currentPage);
-      toast.success('Thanks for your feedback!');
-    } catch (error) {
-      console.error('Error marking helpful:', error);
-      toast.error('Error marking review as helpful');
-    }
+    await markHelpful(reviewId);
   };
 
   const loadMoreReviews = () => {
-    fetchReviews(currentPage + 1);
+    fetchProductReviews(productId, currentPage + 1);
   };
 
-  if (loading) return <div className="flex justify-center py-8">Loading reviews...</div>;
+  if (loading && reviews.length === 0) {
+    return <div className="flex justify-center py-8">Loading reviews...</div>;
+  }
 
   return (
     <div className="product-reviews">
@@ -118,7 +78,9 @@ const ProductReviews = ({ productId }) => {
           <div className="review-stats flex flex-col md:flex-row gap-8 mb-6">
             <div className="average-rating text-center">
               <div className="flex items-center justify-center gap-2 mb-2">
-                <span className="text-4xl font-bold text-gray-900">{reviewStats.averageRating}</span>
+                <span className="text-4xl font-bold text-gray-900">
+                  {reviewStats.averageRating || 0}
+                </span>
                 <span className="text-xl text-gray-600">/5</span>
               </div>
               <div className="flex justify-center mb-2">
@@ -127,7 +89,7 @@ const ProductReviews = ({ productId }) => {
                     key={star}
                     size={20}
                     className={`${
-                      star <= Math.round(reviewStats.averageRating) 
+                      star <= Math.round(reviewStats.averageRating || 0) 
                         ? 'text-yellow-400 fill-current' 
                         : 'text-gray-300'
                     }`}
@@ -135,38 +97,43 @@ const ProductReviews = ({ productId }) => {
                 ))}
               </div>
               <span className="text-gray-600">
-                ({reviewStats.totalReviews} reviews)
+                ({reviewStats.totalReviews || 0} reviews)
               </span>
             </div>
             
             {/* Rating Distribution */}
-            <div className="rating-distribution flex-1">
-              {[5, 4, 3, 2, 1].map(rating => (
-                <div key={rating} className="rating-bar flex items-center gap-3 mb-2">
-                  <span className="w-8 text-sm text-gray-600">{rating} ★</span>
-                  <div className="flex-1 bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-yellow-400 h-2 rounded-full"
-                      style={{ 
-                        width: `${(reviewStats.ratingDistribution[rating] / reviewStats.totalReviews) * 100}%` 
-                      }}
-                    ></div>
+            {reviewStats.ratingDistribution && (
+              <div className="rating-distribution flex-1">
+                {[5, 4, 3, 2, 1].map(rating => (
+                  <div key={rating} className="rating-bar flex items-center gap-3 mb-2">
+                    <span className="w-8 text-sm text-gray-600">{rating} ★</span>
+                    <div className="flex-1 bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-yellow-400 h-2 rounded-full"
+                        style={{ 
+                          width: `${((reviewStats.ratingDistribution[rating] || 0) / (reviewStats.totalReviews || 1)) * 100}%` 
+                        }}
+                      ></div>
+                    </div>
+                    <span className="w-12 text-sm text-gray-600">
+                      ({reviewStats.ratingDistribution[rating] || 0})
+                    </span>
                   </div>
-                  <span className="w-12 text-sm text-gray-600">({reviewStats.ratingDistribution[rating]})</span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
 
       {/* Write Review Button */}
-      {isAuthenticated && canReview && (
+      {isAuthenticated && canReview?.canReview && (
         <button 
-          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors mb-6"
+          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors mb-6 disabled:opacity-50"
           onClick={() => setShowReviewForm(true)}
+          disabled={submitting}
         >
-          Write a Review
+          {submitting ? 'Submitting...' : 'Write a Review'}
         </button>
       )}
 
@@ -214,14 +181,16 @@ const ProductReviews = ({ productId }) => {
               <div className="flex gap-3">
                 <button 
                   type="submit" 
-                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                  disabled={submitting}
                 >
-                  Submit Review
+                  {submitting ? 'Submitting...' : 'Submit Review'}
                 </button>
                 <button 
                   type="button" 
                   className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 transition-colors"
                   onClick={() => setShowReviewForm(false)}
+                  disabled={submitting}
                 >
                   Cancel
                 </button>
@@ -254,8 +223,9 @@ const ProductReviews = ({ productId }) => {
                 <button 
                   onClick={loadMoreReviews} 
                   className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors"
+                  disabled={loading}
                 >
-                  Load More Reviews
+                  {loading ? 'Loading...' : 'Load More Reviews'}
                 </button>
               </div>
             )}

@@ -85,6 +85,10 @@ const ProductDetail = () => {
   if (loading) return <Loading fullScreen />;
   if (!product) return null;
 
+  console.log('🔍 Product Data:', product);
+  console.log('🔍 Review Stats:', reviewStats);
+  console.log('🔍 Review Count:', reviewCount);
+
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="container-custom">
@@ -264,58 +268,63 @@ const ProductDetail = () => {
                 </button>
               </div>
 
-              {/* Tabs for Description and Reviews */}
-              <div className="border-t pt-6">
-                <div className="flex border-b mb-4">
-                  <button
-                    onClick={() => setActiveTab('description')}
-                    className={`px-4 py-2 font-medium border-b-2 transition-colors ${
-                      activeTab === 'description'
-                        ? 'border-primary-600 text-primary-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700'
-                    }`}
-                  >
-                    Description
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('reviews')}
-                    className={`px-4 py-2 font-medium border-b-2 transition-colors flex items-center gap-2 ${
-                      activeTab === 'reviews'
-                        ? 'border-primary-600 text-primary-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700'
-                    }`}
-                  >
-                    <MessageSquare size={16} />
-                    Reviews ({reviewCount})
-                  </button>
-                </div>
+              {/* 🔍 DEBUG: Check if tabs section renders */}
+              <div style={{ border: '2px solid red', padding: '10px', margin: '10px 0' }}>
+                <p style={{ color: 'red', fontWeight: 'bold' }}>DEBUG: Tabs Section Should Appear Below</p>
+                
+                {/* Tabs for Description and Reviews */}
+                <div className="border-t pt-6">
+                  <div className="flex border-b mb-4">
+                    <button
+                      onClick={() => setActiveTab('description')}
+                      className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+                        activeTab === 'description'
+                          ? 'border-primary-600 text-primary-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      Description
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('reviews')}
+                      className={`px-4 py-2 font-medium border-b-2 transition-colors flex items-center gap-2 ${
+                        activeTab === 'reviews'
+                          ? 'border-primary-600 text-primary-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      <MessageSquare size={16} />
+                      Reviews ({reviewCount})
+                    </button>
+                  </div>
 
-                {activeTab === 'description' && (
-                  <div>
-                    <h3 className="font-semibold text-lg mb-3">Product Description</h3>
-                    <p className="text-gray-700 leading-relaxed">{product.description}</p>
-                    
-                    {/* Characters */}
-                    {product.characters?.length > 0 && (
-                      <div className="mt-6">
-                        <h3 className="font-semibold mb-2">Featured Characters:</h3>
-                        <div className="flex flex-wrap gap-2">
-                          {product.characters.map((char, index) => (
-                            <span key={index} className="badge bg-purple-100 text-purple-800">
-                              {char}
-                            </span>
-                          ))}
+                  {activeTab === 'description' && (
+                    <div>
+                      <h3 className="font-semibold text-lg mb-3">Product Description</h3>
+                      <p className="text-gray-700 leading-relaxed">{product.description}</p>
+                      
+                      {/* Characters */}
+                      {product.characters?.length > 0 && (
+                        <div className="mt-6">
+                          <h3 className="font-semibold mb-2">Featured Characters:</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {product.characters.map((char, index) => (
+                              <span key={index} className="badge bg-purple-100 text-purple-800">
+                                {char}
+                              </span>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                )}
+                      )}
+                    </div>
+                  )}
 
-                {activeTab === 'reviews' && (
-                  <div>
-                    <ProductReviews productId={id} />
-                  </div>
-                )}
+                  {activeTab === 'reviews' && (
+                    <div>
+                      <ProductReviews productId={id} />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

@@ -70,8 +70,8 @@ app.use((req, res, next) => {
     }
     
     res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, 'PUT', 'DELETE', 'OPTIONS', 'PATCH');
-    res.header('Access-Control-Allow-Headers', 'Content-Type', 'Authorization', 'X-Requested-With', 'Accept');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH'); // ✅ FIXED: Removed extra quotes
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
     
     // Handle preflight requests
     if (req.method === 'OPTIONS') {

@@ -8,9 +8,11 @@ import Loading from '../components/common/Loading';
 const Home = () => {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     fetchFeaturedProducts();
+    checkAuthStatus();
   }, []);
 
   const fetchFeaturedProducts = async () => {
@@ -21,6 +23,19 @@ const Home = () => {
       console.error('Error fetching featured products:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkAuthStatus = () => {
+    // Check if user is logged in
+    // This could be from localStorage, context, Redux, or an API call
+    const token = localStorage.getItem('authToken');
+    const user = localStorage.getItem('user');
+    
+    if (token && user) {
+      setIsLoggedIn(true);
+    } else {
+      setIsLoggedIn(false);
     }
   };
 
@@ -132,20 +147,22 @@ const Home = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="bg-primary-600 text-white py-16">
-        <div className="container-custom text-center">
-          <h2 className="text-4xl font-display font-bold mb-4">
-            Join Our Anime Community
-          </h2>
-          <p className="text-xl mb-8 text-gray-100">
-            Get exclusive deals, new arrivals, and anime news delivered to your inbox!
-          </p>
-          <Link to="/register" className="btn bg-white text-primary-600 hover:bg-gray-100 text-lg px-8 py-3">
-            Sign Up Now
-          </Link>
-        </div>
-      </section>
+      {/* CTA Section - Only show if user is NOT logged in */}
+      {!isLoggedIn && (
+        <section className="bg-primary-600 text-white py-16">
+          <div className="container-custom text-center">
+            <h2 className="text-4xl font-display font-bold mb-4">
+              Join Our Anime Community
+            </h2>
+            <p className="text-xl mb-8 text-gray-100">
+              Get exclusive deals, new arrivals, and anime news delivered to your inbox!
+            </p>
+            <Link to="/register" className="btn bg-white text-primary-600 hover:bg-gray-100 text-lg px-8 py-3">
+              Sign Up Now
+            </Link>
+          </div>
+        </section>
+      )}
     </div>
   );
 };

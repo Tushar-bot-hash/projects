@@ -75,7 +75,11 @@ exports.getAllProducts = async (req, res) => {
     });
   } catch (error) {
     console.error('Get products error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error', 
+      error: error.message 
+    });
   }
 };
 
@@ -87,11 +91,17 @@ exports.getProductById = async (req, res) => {
     const product = await Product.findById(req.params.id);
 
     if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'Product not found' 
+      });
     }
 
     if (!product.isActive) {
-      return res.status(404).json({ message: 'Product is not available' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'Product is not available' 
+      });
     }
 
     res.status(200).json({
@@ -100,10 +110,17 @@ exports.getProductById = async (req, res) => {
     });
   } catch (error) {
     console.error('Get product error:', error);
-    if (error.kind === 'ObjectId') {
-      return res.status(404).json({ message: 'Product not found' });
+    if (error.name === 'CastError') {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Invalid product ID' 
+      });
     }
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error', 
+      error: error.message 
+    });
   }
 };
 
@@ -132,6 +149,7 @@ exports.createProduct = async (req, res) => {
     // Validation
     if (!name || !description || !price || !category || !animeSeries || !images || images.length === 0) {
       return res.status(400).json({ 
+        success: false,
         message: 'Please provide all required fields: name, description, price, category, animeSeries, and at least one image' 
       });
     }
@@ -160,7 +178,30 @@ exports.createProduct = async (req, res) => {
     });
   } catch (error) {
     console.error('Create product error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({ 
+        success: false,
+        message: 'Validation failed',
+        errors 
+      });
+    }
+    
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Duplicate field value entered' 
+      });
+    }
+
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error', 
+      error: error.message 
+    });
   }
 };
 
@@ -172,13 +213,19 @@ exports.updateProduct = async (req, res) => {
     let product = await Product.findById(req.params.id);
 
     if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'Product not found' 
+      });
     }
 
     product = await Product.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true, runValidators: true }
+      { 
+        new: true, 
+        runValidators: true 
+      }
     );
 
     res.status(200).json({
@@ -188,7 +235,38 @@ exports.updateProduct = async (req, res) => {
     });
   } catch (error) {
     console.error('Update product error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({ 
+        success: false,
+        message: 'Validation failed',
+        errors 
+      });
+    }
+    
+    // Handle invalid ID format
+    if (error.name === 'CastError') {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Invalid product ID' 
+      });
+    }
+
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Duplicate field value entered' 
+      });
+    }
+
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error', 
+      error: error.message 
+    });
   }
 };
 
@@ -200,15 +278,15 @@ exports.deleteProduct = async (req, res) => {
     const product = await Product.findById(req.params.id);
 
     if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'Product not found' 
+      });
     }
 
     // Soft delete - just set isActive to false
     product.isActive = false;
     await product.save();
-
-    // Or hard delete - completely remove from database
-    // await product.deleteOne();
 
     res.status(200).json({
       success: true,
@@ -216,7 +294,20 @@ exports.deleteProduct = async (req, res) => {
     });
   } catch (error) {
     console.error('Delete product error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    
+    // Handle invalid ID format
+    if (error.name === 'CastError') {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Invalid product ID' 
+      });
+    }
+
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error', 
+      error: error.message 
+    });
   }
 };
 
@@ -236,7 +327,11 @@ exports.getFeaturedProducts = async (req, res) => {
     });
   } catch (error) {
     console.error('Get featured products error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error', 
+      error: error.message 
+    });
   }
 };
 
@@ -257,6 +352,10 @@ exports.getProductsByCategory = async (req, res) => {
     });
   } catch (error) {
     console.error('Get products by category error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error', 
+      error: error.message 
+    });
   }
 };

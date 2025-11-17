@@ -14,7 +14,6 @@ const ProductManagement = () => {
     name: '',
     description: '',
     price: '',
-    discountPrice: '',
     category: 'clothing',
     animeSeries: '',
     images: '',
@@ -53,7 +52,6 @@ const ProductManagement = () => {
     const productData = {
       ...formData,
       price: Number(formData.price),
-      discountPrice: formData.discountPrice ? Number(formData.discountPrice) : undefined,
       stock: Number(formData.stock),
       images: formData.images.split(',').map(img => img.trim()),
       sizes: formData.sizes ? formData.sizes.split(',').map(s => s.trim()) : [],
@@ -83,7 +81,6 @@ const ProductManagement = () => {
       name: product.name,
       description: product.description,
       price: product.price,
-      discountPrice: product.discountPrice || '',
       category: product.category,
       animeSeries: product.animeSeries,
       images: product.images.join(', '),
@@ -113,7 +110,6 @@ const ProductManagement = () => {
       name: '',
       description: '',
       price: '',
-      discountPrice: '',
       category: 'clothing',
       animeSeries: '',
       images: '',
@@ -258,28 +254,16 @@ const ProductManagement = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Price *</label>
-                    <input
-                      type="number"
-                      name="price"
-                      value={formData.price}
-                      onChange={handleInputChange}
-                      className="input"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Discount Price</label>
-                    <input
-                      type="number"
-                      name="discountPrice"
-                      value={formData.discountPrice}
-                      onChange={handleInputChange}
-                      className="input"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Price *</label>
+                  <input
+                    type="number"
+                    name="price"
+                    value={formData.price}
+                    onChange={handleInputChange}
+                    className="input"
+                    required
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
